@@ -26,12 +26,25 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       curve: Curves.decelerate,
     );
     controller.forward();
+    
+    animation.addStatusListener((status) {
+      if(status == AnimationStatus.completed){
+        controller.reverse(from: 1.0);
+      }
+      else if(status == AnimationStatus.dismissed){
+        controller.forward();
+      }
+    });
 
     controller.addListener(() {
       setState(() {});
     });
   }
-
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
