@@ -2,6 +2,7 @@ import 'package:flash_chat/screens/login_screen.dart';
 import 'package:flash_chat/screens/registration_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flash_chat/components/rounded_button.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class WelcomeScreen extends StatefulWidget {
   static String id = '/';
@@ -17,6 +18,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void initState() {
     super.initState();
+    //initializing firebase
+    Firebase.initializeApp();
     controller = AnimationController(
       duration: Duration(seconds: 1),
       vsync: this,
