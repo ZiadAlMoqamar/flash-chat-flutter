@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:flash_chat/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flash_chat/constants.dart';
+import 'package:flutter/material.dart';
 
 final _firestore = FirebaseFirestore.instance;
 User loggedInUser;
@@ -29,7 +29,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final user = await _auth.currentUser;
       if (user != null) {
         loggedInUser = user;
-        print(loggedInUser.email);
       }
     } catch (e) {
       print(e);
@@ -78,6 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       _firestore.collection('messages').add({
                         'text': messageText,
                         'sender': loggedInUser.email,
+                        'timestamp': FieldValue.serverTimestamp()
                       });
                     },
                     child: Text(
@@ -99,7 +99,10 @@ class MessagesStream extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('messages').snapshots(),
+        stream: _firestore
+            .collection('messages')
+            .orderBy('timestamp', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
@@ -108,17 +111,22 @@ class MessagesStream extends StatelessWidget {
               ),
             );
           }
-          final messages = snapshot.data.docs.reversed;
+          final messages = snapshot.data.docs;
+
           List<MessageBubble> messageBubbles = [];
           for (var message in messages) {
             final messageText = message.data()['text'];
             final messageSender = message.data()['sender'];
+            String messageTimeStamp = message.data()['timestamp'] == null
+                ? "now                "
+                : message.data()['timestamp'].toDate().toString();
             final currentUser = loggedInUser.email;
 
             final messageBubble = MessageBubble(
               sender: messageSender,
               text: messageText,
               isMe: currentUser == messageSender,
+              timestamp: messageTimeStamp,
             );
 
             messageBubbles.add(messageBubble);
@@ -138,8 +146,12 @@ class MessageBubble extends StatelessWidget {
   final String sender;
   final String text;
   final bool isMe;
+  final String timestamp;
+  String trimmedTimeStamp;
 
-  MessageBubble({this.sender, this.text, this.isMe});
+  MessageBubble({this.sender, this.text, this.isMe, this.timestamp}) {
+    trimmedTimeStamp = timestamp.substring(0, 16);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +163,10 @@ class MessageBubble extends StatelessWidget {
         children: [
           Text(
             sender,
-            style: TextStyle(fontSize: 12, color: Colors.black54),
+            style: TextStyle(fontSize: 14, color: Colors.black54),
+          ),
+          SizedBox(
+            height: 2,
           ),
           Material(
             elevation: 5,
@@ -174,6 +189,13 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(
+            height: 2,
+          ),
+          Text(
+            trimmedTimeStamp.trim(),
+            style: TextStyle(fontSize: 12, color: Colors.black54),
+          )
         ],
       ),
     );
